@@ -7,6 +7,8 @@ tools: ['search', 'read']
 
 Analyze the controller in ${file} and generate comprehensive API documentation.
 
+If ${file} contains more than one controller class, document the endpoints of each class under its own level-2 heading, using the class name.
+
 If ${file} is not an API controller or contains no HTTP endpoints, do not invent endpoints. Respond only with: "The active file does not define any API endpoints."
 
 For each endpoint in the controller:
