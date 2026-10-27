@@ -41,6 +41,7 @@ public interface ICategoryService
     /// </summary>
     /// <param name="id">The category identifier.</param>
     /// <returns>True if the category was deleted, false if not found.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the category contains products.</exception>
     Task<bool> DeleteCategoryAsync(int id);
 
     /// <summary>

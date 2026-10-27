@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ContosoInventory.Server.Data;
 using ContosoInventory.Server.Models;
 using ContosoInventory.Shared.DTOs;
+using Microsoft.Data.Sqlite;
 
 namespace ContosoInventory.Server.Services;
 
@@ -152,12 +153,22 @@ public class CategoryService : ICategoryService
                 return false;
             }
 
+            if (await _context.Products.AnyAsync(p => p.CategoryId == id))
+            {
+                throw new InvalidOperationException("Cannot delete a category that contains products.");
+            }
+
             _context.Categories.Remove(category);
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Category deleted: {CategoryName} (ID: {CategoryId}).", category.Name, category.Id);
 
             return true;
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is SqliteException { SqliteExtendedErrorCode: 787 })
+        {
+            _logger.LogWarning(ex, "Category {CategoryId} contains products and cannot be deleted.", id);
+            throw new InvalidOperationException("Cannot delete a category that contains products.", ex);
         }
         catch (Exception ex)
         {

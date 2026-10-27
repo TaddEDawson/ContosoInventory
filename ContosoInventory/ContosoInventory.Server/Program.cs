@@ -100,10 +100,15 @@ builder.Services.AddAntiforgery();
 
 // 9. Application services
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IProductService, ProductService>();
 
 var app = builder.Build();
 
 // Middleware pipeline
+
+app.UseExceptionHandler(errorApp => errorApp.Run(context =>
+    Results.Json(new { message = "An unexpected error occurred." },
+        statusCode: StatusCodes.Status500InternalServerError).ExecuteAsync(context)));
 
 // 1. Swagger (development only)
 // WARNING: Swagger is exposed without authentication. In production deployments,
@@ -163,3 +168,6 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+/// <summary>Exposes the application entry point for integration testing.</summary>
+public partial class Program { }
