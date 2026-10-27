@@ -32,7 +32,9 @@ for prerequisites, demo credentials, and role permissions.
   through `ICategoryService` to `CategoryService`, which uses EF Core.
 - `ContosoInventory.Shared` contains request/response DTOs with validation
   annotations, shared by the client and server. Persistence entities remain
-  server-side.
+  server-side. If a request DTO fails validation, return 400 Bad Request with
+  a JSON body containing the validation error messages. Do not return 500 for
+  validation failures.
 - `InventoryContext` inherits from `IdentityDbContext<IdentityUser>`: inventory
   and Identity tables share the SQLite database. The default database is
   `App_Data/ContosoInventory.db` under the server project. Startup calls
@@ -83,7 +85,7 @@ for prerequisites, demo credentials, and role permissions.
  - Prefix interface names with "I" (e.g., IInventoryService).
 
  ## Architecture Patterns
- - Follow the repository pattern for all data access operations.
+ - Data access goes through EF Core `InventoryContext` inside service classes. Do not create repository interfaces or classes unless the user explicitly requests them.
  - Use dependency injection for all service dependencies. Register services in Program.cs.
  - Separate business logic into service classes. Controllers should only handle HTTP concerns.
  - Use DTOs (Data Transfer Objects) for API request and response payloads. Never expose database entities directly.
