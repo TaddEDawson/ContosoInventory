@@ -165,7 +165,7 @@ public class CategoryService : ICategoryService
 
             return true;
         }
-        catch (DbUpdateException ex) when (ex.InnerException is SqliteException { SqliteExtendedErrorCode: 787 })
+        catch (DbUpdateException ex) when (ex.InnerException is SqliteException { SqliteExtendedErrorCode: 787 or 1811 })
         {
             _logger.LogWarning(ex, "Category {CategoryId} contains products and cannot be deleted.", id);
             throw new InvalidOperationException("Cannot delete a category that contains products.", ex);

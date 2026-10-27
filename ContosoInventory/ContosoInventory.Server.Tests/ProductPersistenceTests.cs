@@ -153,7 +153,32 @@ public class ProductPersistenceTests : IAsyncLifetime
         _context.ChangeTracker.Clear();
         _context.Categories.Remove(await _context.Categories.SingleAsync());
         var error = await Assert.ThrowsAsync<DbUpdateException>(() => _context.SaveChangesAsync());
-        Assert.Equal(787, Assert.IsType<SqliteException>(error.InnerException).SqliteExtendedErrorCode);
+        Assert.Equal(1811, Assert.IsType<SqliteException>(error.InnerException).SqliteExtendedErrorCode);
+    }
+
+    [Fact]
+    public async Task DeleteCategory_ProductAddedAfterPrecheck_ReportsBusinessError()
+    {
+        var service = new CategoryService(_context, Mock.Of<ILogger<CategoryService>>());
+        _context.SavingChanges += (_, _) =>
+        {
+            using var command = _connection.CreateCommand();
+            command.CommandText = """
+                INSERT INTO Products
+                    (Name, Sku, NormalizedSku, Description, Price, StockQuantity, CategoryId, CreatedDate, LastUpdatedDate)
+                VALUES
+                    ('Concurrent product', 'race', 'RACE', '', '1.00', 0, $categoryId, '2026-01-01', '2026-01-01')
+                """;
+            command.Parameters.AddWithValue("$categoryId", _categoryId);
+            command.ExecuteNonQuery();
+        };
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteCategoryAsync(_categoryId));
+        Assert.Contains("contains products", error.Message);
+        var databaseError = Assert.IsType<DbUpdateException>(error.InnerException);
+        Assert.Equal(1811, Assert.IsType<SqliteException>(databaseError.InnerException).SqliteExtendedErrorCode);
+        Assert.Single(await _context.Products.AsNoTracking().ToListAsync());
+        Assert.Single(await _context.Categories.AsNoTracking().ToListAsync());
     }
 
     [Fact]
